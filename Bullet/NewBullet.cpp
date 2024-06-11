@@ -13,8 +13,8 @@
 
 class Turret;
 
-NewBullet::NewBullet(Engine::Point position, Engine::Point forwardDirection, float rotation, Turret* parent) :
-	Bullet("play/bullet-4.png", 75, 8, position, forwardDirection, rotation + ALLEGRO_PI / 2, parent) {
+NewBullet::NewBullet(Engine::Point position, Engine::Point forwardDirection, float rotation) :
+	Bullet("play/bullet-4.png", 75, 8, position, forwardDirection, rotation + ALLEGRO_PI / 2) {
 }
 void NewBullet::Update(float deltaTime) {
 	if (!Target) {

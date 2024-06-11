@@ -245,7 +245,8 @@ void PlayScene::OnMouseUp(int button, int mx, int my) {
 			// Construct real turret.
 			preview->Position.x = x * BlockSize + BlockSize / 2;
 			preview->Position.y = y * BlockSize + BlockSize / 2;
-			preview->Enabled = true;
+			if(preview->GetPrice()==5) preview->Enabled = false;
+			else preview->Enabled = true;
 			preview->Preview = false;
 			preview->Tint = al_map_rgba(255, 255, 255, 255);
 			TowerGroup->AddNewObject(preview);
@@ -283,21 +284,33 @@ void PlayScene::OnKeyDown(int keyCode) {
 			EffectGroup->AddNewObject(new Plane());
 		}
 	}
-	if (keyCode == ALLEGRO_KEY_Q) {
+	if (keyCode == ALLEGRO_KEY_R) {
 		// Hotkey for MachineGunTurret.
 		UIBtnClicked(0);
 	}
-	else if (keyCode == ALLEGRO_KEY_W) {
+	else if (keyCode == ALLEGRO_KEY_F) {
 		// Hotkey for LaserTurret.
 		UIBtnClicked(1);
 	}
-	else if (keyCode == ALLEGRO_KEY_E) {
+	else if (keyCode == ALLEGRO_KEY_V) {
 		// Hotkey for MissileTurret.
 		UIBtnClicked(2);
 	}
-	else if (keyCode == ALLEGRO_KEY_R) {
+	else if (keyCode == ALLEGRO_KEY_E) {
 		// Hotkey for TowerBase.
 		UIBtnClicked(3);
+	}
+	else if (keyCode == ALLEGRO_KEY_W) {
+		
+	}
+	else if (keyCode == ALLEGRO_KEY_S) {
+		
+	}
+	else if (keyCode == ALLEGRO_KEY_A) {
+		
+	}
+	else if (keyCode == ALLEGRO_KEY_D) {
+		
 	}
 	// TODO: [CUSTOM-TURRET]: Make specific key to create the turret.
 	else if (keyCode >= ALLEGRO_KEY_0 && keyCode <= ALLEGRO_KEY_9) {

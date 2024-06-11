@@ -15,12 +15,11 @@ class Bullet : public Engine::Sprite {
 protected:
 	float speed;
 	float damage;
-	Turret* parent;
 	PlayScene* getPlayScene();
 	virtual void OnExplode(Enemy* enemy);
 public:
 	Enemy* Target = nullptr;
-	explicit Bullet(std::string img, float speed, float damage, Engine::Point position, Engine::Point forwardDirection, float rotation, Turret* parent);
+	explicit Bullet(std::string img, float speed, float damage, Engine::Point position, Engine::Point forwardDirection, float rotation);
 	void Update(float deltaTime) override;
 };
 #endif // BULLET_HPP
