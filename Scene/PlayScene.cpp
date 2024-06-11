@@ -18,7 +18,7 @@
 #include "Turret/LaserTurret.hpp"
 #include "Turret/MachineGunTurret.hpp"
 #include "Turret/MissileTurret.hpp"
-#include "Turret/NewTurret.hpp"
+#include "Turret/TowerBase.hpp"
 #include "UI/Animation/Plane.hpp"
 #include "Enemy/PlaneEnemy.hpp"
 #include "PlayScene.hpp"
@@ -296,7 +296,7 @@ void PlayScene::OnKeyDown(int keyCode) {
 		UIBtnClicked(2);
 	}
 	else if (keyCode == ALLEGRO_KEY_R) {
-		// Hotkey for NewTurret.
+		// Hotkey for TowerBase.
 		UIBtnClicked(3);
 	}
 	// TODO: [CUSTOM-TURRET]: Make specific key to create the turret.
@@ -413,9 +413,9 @@ void PlayScene::ConstructUI() {
 	UIGroup->AddNewControlObject(btn);
 	// TODO: [CUSTOM-TURRET]: Create a button to support constructing the turret.
 	btn = new TurretButton("play/floor.png", "play/dirt.png",
-	Engine::Sprite("play/tower-base.png", 1522, 136, 0, 0, 0, 0),
-	Engine::Sprite("play/turret-4.png", 1522, 136, 0, 0, 0, 0)
-	, 1522, 136, NewTurret::Price);
+	Engine::Sprite("play/sand.png", 1522, 136, 0, 0, 0, 0),
+	Engine::Sprite("play/tower-base.png", 1522, 136, 0, 0, 0, 0)
+	, 1522, 136, TowerBase::Price);
 	btn->SetOnClickCallback(std::bind(&PlayScene::UIBtnClicked, this, 3));
 	UIGroup->AddNewControlObject(btn);
 
@@ -437,8 +437,8 @@ void PlayScene::UIBtnClicked(int id) {
 		preview = new LaserTurret(0, 0);
 	else if (id == 2 && money >= MissileTurret::Price)
 		preview = new MissileTurret(0, 0);
-	else if (id == 3 && money >= NewTurret::Price)
-		preview = new NewTurret(0, 0);
+	else if (id == 3 && money >= TowerBase::Price)
+		preview = new TowerBase(0, 0);
 	if (!preview)
 		return;
 	preview->Position = Engine::GameEngine::GetInstance().GetMousePosition();
