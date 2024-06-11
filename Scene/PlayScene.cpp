@@ -19,6 +19,7 @@
 #include "Turret/MachineGunTurret.hpp"
 #include "Turret/MissileTurret.hpp"
 #include "Turret/TowerBase.hpp"
+#include "Turret/MainTurret.hpp"
 #include "UI/Animation/Plane.hpp"
 #include "Enemy/PlaneEnemy.hpp"
 #include "PlayScene.hpp"
@@ -28,6 +29,7 @@
 #include "Enemy/NewEnemy.hpp"
 #include "Turret/TurretButton.hpp"
 int Score = 0;
+int KeyCodeDetect[4]; // wsad
 bool PlayScene::DebugMode = false;
 const std::vector<Engine::Point> PlayScene::directions = { Engine::Point(-1, 0), Engine::Point(0, -1), Engine::Point(1, 0), Engine::Point(0, 1) };
 const int PlayScene::MapWidth = 20, PlayScene::MapHeight = 13;
@@ -41,6 +43,7 @@ const std::vector<int> PlayScene::code = { ALLEGRO_KEY_UP, ALLEGRO_KEY_UP, ALLEG
 Engine::Point PlayScene::GetClientSize() {
 	return Engine::Point(MapWidth * BlockSize, MapHeight * BlockSize);
 }
+MainTurret* main_turret; 
 void PlayScene::Initialize() {
 	// TODO: [HACKATHON-3-BUG] (1/5): There's a bug in this file, which crashes the game when you lose. Try to find it.
 	// TODO: [HACKATHON-3-BUG] (2/5): Find out the cheat code to test.
@@ -54,6 +57,7 @@ void PlayScene::Initialize() {
 	Score = 0;
 	SpeedMult = 1;
 	// Add groups from bottom to top.
+	main_turret = new MainTurret(500, 500);
 	AddNewObject(TileMapGroup = new Group());
 	AddNewObject(GroundEffectGroup = new Group());
 	AddNewObject(DebugIndicatorGroup = new Group());
@@ -86,6 +90,7 @@ void PlayScene::Terminate() {
 void PlayScene::Update(float deltaTime) {
 	// If we use deltaTime directly, then we might have Bullet-through-paper problem.
 	// Reference: Bullet-Through-Paper
+	main_turret->Update(deltaTime);
 	if (SpeedMult == 0)
 		deathCountDown = -1;
 	else if (deathCountDown != -1)
@@ -120,6 +125,8 @@ void PlayScene::Update(float deltaTime) {
 		}
 	}
 	deathCountDown = newDeathCountDown;
+	for (auto& it : EnemyGroup->GetObjects())
+		dynamic_cast<Enemy*>(it)->UpdatePath(mapDistance);
 	if (SpeedMult == 0)
 		AudioHelper::StopSample(deathBGMInstance);
 	if (deathCountDown == -1 && lives > 0) {
@@ -178,6 +185,7 @@ void PlayScene::Update(float deltaTime) {
 		// Compensate the time lost.
 		enemy->Update(ticks);
 	}
+	mapDistance = CalculateBFSDistance();
 	if (preview) {
 		preview->Position = Engine::GameEngine::GetInstance().GetMousePosition();
 		// To keep responding when paused.
@@ -186,6 +194,7 @@ void PlayScene::Update(float deltaTime) {
 }
 void PlayScene::Draw() const {
 	IScene::Draw();
+	main_turret->Draw();
 	if (DebugMode) {
 		// Draw reverse BFS distance on all reachable blocks.
 		for (int i = 0; i < MapHeight; i++) {
@@ -301,21 +310,42 @@ void PlayScene::OnKeyDown(int keyCode) {
 		UIBtnClicked(3);
 	}
 	else if (keyCode == ALLEGRO_KEY_W) {
-		
+		KeyCodeDetect[0] = 1; 
+		main_turret->forwardDirection = Engine::Point(-KeyCodeDetect[2]+KeyCodeDetect[3], -KeyCodeDetect[0]+KeyCodeDetect[1]);
 	}
 	else if (keyCode == ALLEGRO_KEY_S) {
-		
+		KeyCodeDetect[1] = 1;
+		main_turret->forwardDirection = Engine::Point(-KeyCodeDetect[2]+KeyCodeDetect[3], -KeyCodeDetect[0]+KeyCodeDetect[1]);
 	}
 	else if (keyCode == ALLEGRO_KEY_A) {
-		
+		KeyCodeDetect[2] = 1;
+		main_turret->forwardDirection = Engine::Point(-KeyCodeDetect[2]+KeyCodeDetect[3], -KeyCodeDetect[0]+KeyCodeDetect[1]);
 	}
 	else if (keyCode == ALLEGRO_KEY_D) {
-		
+		KeyCodeDetect[3] = 1;
+		main_turret->forwardDirection = Engine::Point(-KeyCodeDetect[2]+KeyCodeDetect[3], -KeyCodeDetect[0]+KeyCodeDetect[1]);
+	}
+	else if (keyCode == ALLEGRO_KEY_P) {
+		main_turret->forwardDirection = Engine::Point(-KeyCodeDetect[2]+KeyCodeDetect[3], -KeyCodeDetect[0]+KeyCodeDetect[1]);
 	}
 	// TODO: [CUSTOM-TURRET]: Make specific key to create the turret.
 	else if (keyCode >= ALLEGRO_KEY_0 && keyCode <= ALLEGRO_KEY_9) {
 		// Hotkey for Speed up.
 		SpeedMult = keyCode - ALLEGRO_KEY_0;
+	}
+}
+void PlayScene::OnKeyUp(int keyCode) {
+	if (keyCode == ALLEGRO_KEY_W) {
+		KeyCodeDetect[0] = 0; 
+	}
+	else if (keyCode == ALLEGRO_KEY_S) {
+		KeyCodeDetect[1] = 0;
+	}
+	else if (keyCode == ALLEGRO_KEY_A) {
+		KeyCodeDetect[2] = 0;
+	}
+	else if (keyCode == ALLEGRO_KEY_D) {
+		KeyCodeDetect[3] = 0;
 	}
 }
 void PlayScene::Hit() {
@@ -402,7 +432,8 @@ void PlayScene::ConstructUI() {
 	UIGroup->AddNewObject(UIScore = new Engine::Label(std::string("score->") + std::to_string(Score), "pirulen.ttf", 24, 1400, 48));
 	UIGroup->AddNewObject(UILives = new Engine::Label(std::string("Life ") + std::to_string(lives), "pirulen.ttf", 24, 1294, 88));
 	TurretButton* btn;
-	// Button 1
+	// Button 1 
+	/*
 	btn = new TurretButton("play/floor.png", "play/dirt.png",
 		Engine::Sprite("play/tower-base.png", 1294, 136, 0, 0, 0, 0),
 		Engine::Sprite("play/turret-1.png", 1294, 136 - 8, 0, 0, 0, 0)
@@ -423,7 +454,8 @@ void PlayScene::ConstructUI() {
 		Engine::Sprite("play/turret-3.png", 1446, 136, 0, 0, 0, 0)
 		, 1446, 136, MissileTurret::Price);
 	btn->SetOnClickCallback(std::bind(&PlayScene::UIBtnClicked, this, 2));
-	UIGroup->AddNewControlObject(btn);
+	UIGroup->AddNewControlObject(btn); 
+	*/
 	// TODO: [CUSTOM-TURRET]: Create a button to support constructing the turret.
 	btn = new TurretButton("play/floor.png", "play/dirt.png",
 	Engine::Sprite("play/sand.png", 1522, 136, 0, 0, 0, 0),
@@ -441,16 +473,18 @@ void PlayScene::ConstructUI() {
 }
 
 void PlayScene::UIBtnClicked(int id) {
+	std::cout <<"Wrong" << id << std::endl;
 	if (preview)
 		UIGroup->RemoveObject(preview->GetObjectIterator());
     // TODO: [CUSTOM-TURRET]: On callback, create the turret.
+	/*
 	if (id == 0 && money >= MachineGunTurret::Price)
 		preview = new MachineGunTurret(0, 0);
 	else if (id == 1 && money >= LaserTurret::Price)
 		preview = new LaserTurret(0, 0);
 	else if (id == 2 && money >= MissileTurret::Price)
-		preview = new MissileTurret(0, 0);
-	else if (id == 3 && money >= TowerBase::Price)
+		preview = new MissileTurret(0, 0);*/
+	if (id == 3 && money >= TowerBase::Price)
 		preview = new TowerBase(0, 0);
 	if (!preview)
 		return;
@@ -495,10 +529,8 @@ std::vector<std::vector<int>> PlayScene::CalculateBFSDistance() {
 	std::queue<Engine::Point> que;
 	// Push end point.
 	// BFS from end point.
-	if (mapState[MapHeight - 1][MapWidth - 1] != TILE_DIRT)
-		return map;
-	que.push(Engine::Point(MapWidth - 1, MapHeight - 1));
-	map[MapHeight - 1][MapWidth - 1] = 0;
+	que.push(Engine::Point(floor(main_turret->Position.x/BlockSize), floor(main_turret->Position.y/BlockSize)));
+	map[floor(main_turret->Position.y/BlockSize)][floor(main_turret->Position.x/BlockSize)] = 0;
 	while (!que.empty()) {
 		Engine::Point p = que.front();
 		if (p.y > 0 && map[p.y - 1][p.x] == -1 && mapState[p.y - 1][p.x] == TILE_DIRT) {

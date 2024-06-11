@@ -9,6 +9,7 @@
 #include "Engine/IScene.hpp"
 #include "Engine/Point.hpp"
 extern int Score;
+extern int KeyCodeDetect[4];
 class Turret;
 namespace Engine {
 	class Group;
@@ -71,6 +72,7 @@ public:
 	void OnMouseMove(int mx, int my) override;
 	void OnMouseUp(int button, int mx, int my) override;
 	void OnKeyDown(int keyCode) override;
+	void OnKeyUp(int keyCode) override;
 	void Hit();
 	int GetMoney() const;
 	void EarnMoney(int money);

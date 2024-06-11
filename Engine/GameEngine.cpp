@@ -17,6 +17,7 @@
 #include "LOG.hpp"
 #include "Point.hpp"
 #include "Resources.hpp"
+#include "Scene/PlayScene.hpp"
 
 namespace Engine {
 	void GameEngine::initAllegro5() {
@@ -139,6 +140,10 @@ namespace Engine {
 			default:
 				// Ignore events that we're not interested in.
 				break;
+			}
+			if(KeyCodeDetect[0] || KeyCodeDetect[1] || KeyCodeDetect[2] || KeyCodeDetect[3]){
+				LOG(VERBOSE) << "Key with keycode " << ALLEGRO_KEY_P << " down";
+				activeScene->OnKeyDown(ALLEGRO_KEY_P);
 			}
 			// Can process more events and call callbacks by adding more cases.
 

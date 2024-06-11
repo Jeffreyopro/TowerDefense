@@ -9,13 +9,16 @@ class PlayScene;
 
 class MainTurret : public Engine::Sprite{
 public:
-	float speed = 20;
+	float speed = 100;
     int level = 1;
-    float coolDown;
+    float coolDown = 0.3;
     float reload = 0;
     float rotateRadian = 2 * ALLEGRO_PI;
     MainTurret(float x, float y);
     void CreateBullet();
     PlayScene* getPlayScene();
+    void Draw() const;
+    void Update(float deltaTime);
+    Engine::Point forwardDirection = Engine::Point(0, 0);
 };
 #endif // MAINTURRET_HPP
