@@ -16,7 +16,8 @@
 #include "Engine/Group.hpp"
 #include "UI/Component/Label.hpp"
 #include "Turret/LaserTurret.hpp"
-#include "Turret/MachineGunTurret.hpp"
+#include "Turret/LevelUp.hpp"
+#include "Turret/SpeedUp.hpp"
 #include "Turret/MissileTurret.hpp"
 #include "Turret/TowerBase.hpp"
 #include "Turret/MainTurret.hpp"
@@ -28,8 +29,10 @@
 #include "Enemy/TankEnemy.hpp"
 #include "Enemy/NewEnemy.hpp"
 #include "Turret/TurretButton.hpp"
-int Score = 0;
+#include "Engine/Collider.hpp"
+int Score;
 int KeyCodeDetect[4]; // wsad
+TurretButton* storage[3]; // store btn pointer
 bool PlayScene::DebugMode = false;
 const std::vector<Engine::Point> PlayScene::directions = { Engine::Point(-1, 0), Engine::Point(0, -1), Engine::Point(1, 0), Engine::Point(0, 1) };
 const int PlayScene::MapWidth = 20, PlayScene::MapHeight = 13;
@@ -50,12 +53,15 @@ void PlayScene::Initialize() {
     // TODO: [HACKATHON-3-BUG] (2/5): It should generate a Plane, and add 10000 to the money, but it doesn't work now.
 	mapState.clear();
 	keyStrokes.clear();
+	memset(KeyCodeDetect, 0, sizeof(KeyCodeDetect));
 	ticks = 0;
 	deathCountDown = -1;
-	lives = 10;
-	money = 150;
+	lives = 5;
+	money = 3000;
 	Score = 0;
 	SpeedMult = 1;
+	LevelUpPrice = 100;
+	SpeedUpPrice = 50;
 	// Add groups from bottom to top.
 	main_turret = new MainTurret(500, 500);
 	AddNewObject(TileMapGroup = new Group());
@@ -85,6 +91,7 @@ void PlayScene::Terminate() {
 	AudioHelper::StopBGM(bgmId);
 	AudioHelper::StopSample(deathBGMInstance);
 	deathBGMInstance = std::shared_ptr<ALLEGRO_SAMPLE_INSTANCE>();
+	delete main_turret;
 	IScene::Terminate();
 }
 void PlayScene::Update(float deltaTime) {
@@ -125,8 +132,17 @@ void PlayScene::Update(float deltaTime) {
 		}
 	}
 	deathCountDown = newDeathCountDown;
-	for (auto& it : EnemyGroup->GetObjects())
-		dynamic_cast<Enemy*>(it)->UpdatePath(mapDistance);
+	for (auto& it : EnemyGroup->GetObjects()) {
+		Enemy* enemy = dynamic_cast<Enemy*>(it);
+		if (!enemy->Visible)
+			continue;
+		if (Engine::Collider::IsCircleOverlap(main_turret->Position, main_turret->CollisionRadius, enemy->Position, enemy->CollisionRadius)) {
+			enemy->Hit(100000);
+			Hit();
+			return;
+	}
+	dynamic_cast<Enemy*>(it)->UpdatePath(mapDistance);
+	}
 	if (SpeedMult == 0)
 		AudioHelper::StopSample(deathBGMInstance);
 	if (deathCountDown == -1 && lives > 0) {
@@ -215,6 +231,7 @@ void PlayScene::OnMouseDown(int button, int mx, int my) {
 		UIGroup->RemoveObject(preview->GetObjectIterator());
 		preview = nullptr;
 	}
+	main_turret->clicked = 1;
 	IScene::OnMouseDown(button, mx, my);
 }
 void PlayScene::OnMouseMove(int mx, int my) {
@@ -254,7 +271,7 @@ void PlayScene::OnMouseUp(int button, int mx, int my) {
 			// Construct real turret.
 			preview->Position.x = x * BlockSize + BlockSize / 2;
 			preview->Position.y = y * BlockSize + BlockSize / 2;
-			if(preview->GetPrice()==5) preview->Enabled = false;
+			if(preview->GetPrice()==100) preview->Enabled = false;
 			else preview->Enabled = true;
 			preview->Preview = false;
 			preview->Tint = al_map_rgba(255, 255, 255, 255);
@@ -276,7 +293,7 @@ void PlayScene::OnKeyDown(int keyCode) {
 	}
 	else {
 		keyStrokes.push_back(keyCode);
-		std::printf("%d\n", keyStrokes.size());
+		//std::printf("%d\n", keyStrokes.size());
 		if (keyStrokes.size() > code.size())
 			keyStrokes.pop_front();
 		if (keyCode == ALLEGRO_KEY_ENTER && keyStrokes.size() == code.size()) {
@@ -294,11 +311,11 @@ void PlayScene::OnKeyDown(int keyCode) {
 		}
 	}
 	if (keyCode == ALLEGRO_KEY_R) {
-		// Hotkey for MachineGunTurret.
+		// Hotkey for LevelUp.
 		UIBtnClicked(0);
 	}
 	else if (keyCode == ALLEGRO_KEY_F) {
-		// Hotkey for LaserTurret.
+		// Hotkey for SpeedUp.
 		UIBtnClicked(1);
 	}
 	else if (keyCode == ALLEGRO_KEY_V) {
@@ -431,24 +448,26 @@ void PlayScene::ConstructUI() {
 	UIGroup->AddNewObject(UIMoney = new Engine::Label(std::string("$") + std::to_string(money), "pirulen.ttf", 24, 1294, 48));
 	UIGroup->AddNewObject(UIScore = new Engine::Label(std::string("score->") + std::to_string(Score), "pirulen.ttf", 24, 1400, 48));
 	UIGroup->AddNewObject(UILives = new Engine::Label(std::string("Life ") + std::to_string(lives), "pirulen.ttf", 24, 1294, 88));
-	TurretButton* btn;
 	// Button 1 
-	/*
-	btn = new TurretButton("play/floor.png", "play/dirt.png",
-		Engine::Sprite("play/tower-base.png", 1294, 136, 0, 0, 0, 0),
-		Engine::Sprite("play/turret-1.png", 1294, 136 - 8, 0, 0, 0, 0)
-		, 1294, 136, MachineGunTurret::Price);
+	auto btn = new TurretButton("play/floor.png", "play/dirt.png",
+		Engine::Sprite("win/dirt.png", 1294, 136, 0, 0, 0, 0),
+		Engine::Sprite("play/LevelUp.png", 1294, 136, 0, 0, 0, 0)
+		, 1294, 136, LevelUpPrice);
 	// Reference: Class Member Function Pointer and std::bind.
 	btn->SetOnClickCallback(std::bind(&PlayScene::UIBtnClicked, this, 0));
 	UIGroup->AddNewControlObject(btn);
+	storage[0] = btn;
+
 	// Button 2
 	btn = new TurretButton("play/floor.png", "play/dirt.png",
-		Engine::Sprite("play/tower-base.png", 1370, 136, 0, 0, 0, 0),
-		Engine::Sprite("play/turret-2.png", 1370, 136 - 8, 0, 0, 0, 0)
-		, 1370, 136, LaserTurret::Price);
+		Engine::Sprite("play/dirt.png", 1370, 136, 0, 0, 0, 0),
+		Engine::Sprite("play/SpeedUp.png", 1370, 136, 0, 0, 0, 0)
+		, 1370, 136, SpeedUpPrice);
 	btn->SetOnClickCallback(std::bind(&PlayScene::UIBtnClicked, this, 1));
 	UIGroup->AddNewControlObject(btn);
+	storage[1] = btn;
 	// Button 3
+	/*
 	btn = new TurretButton("play/floor.png", "play/dirt.png",
 		Engine::Sprite("play/tower-base.png", 1446, 136, 0, 0, 0, 0),
 		Engine::Sprite("play/turret-3.png", 1446, 136, 0, 0, 0, 0)
@@ -473,19 +492,42 @@ void PlayScene::ConstructUI() {
 }
 
 void PlayScene::UIBtnClicked(int id) {
-	std::cout <<"Wrong" << id << std::endl;
-	if (preview)
+	if (preview) {
 		UIGroup->RemoveObject(preview->GetObjectIterator());
+	}
     // TODO: [CUSTOM-TURRET]: On callback, create the turret.
+	if (id == 0 && money >= LevelUpPrice) {
+		main_turret->level++;
+		EarnMoney(-LevelUpPrice);
+		if(main_turret->level!=6) LevelUpPrice *= 1.5;
+		else LevelUpPrice = 10000000;
+		storage[0]->money = LevelUpPrice;
+		/* 
+		UIGroup->RemoveControlObject(storage[0]->GetControlIterator(), dynamic_cast<IObject*>(storage[0])->GetObjectIterator());
+		auto btn = new TurretButton("play/floor.png", "play/dirt.png",
+		Engine::Sprite("win/dirt.png", 1294, 136, 0, 0, 0, 0),
+		Engine::Sprite("play/LevelUp.png", 1294, 136 , 0, 0, 0, 0)
+		, 1294, 136, LevelUpPrice);
+		// Reference: Class Member Function Pointer and std::bind.
+		btn->SetOnClickCallback(std::bind(&PlayScene::UIBtnClicked, this, id)); //problem
+		UIGroup->AddNewControlObject(btn);
+		storage[0] = btn;
+		*/
+		//std::cout << "level" << main_turret->level << std::endl;
+	}
+	else if (id == 1 && money >= LaserTurret::Price) {
+		main_turret->speed *= 1.3;
+		EarnMoney(-SpeedUpPrice);
+		if(main_turret->speed<=100) SpeedUpPrice *= 1.5;
+		else SpeedUpPrice = 10000000;
+		storage[1]->money = SpeedUpPrice;
+	}
 	/*
-	if (id == 0 && money >= MachineGunTurret::Price)
-		preview = new MachineGunTurret(0, 0);
-	else if (id == 1 && money >= LaserTurret::Price)
-		preview = new LaserTurret(0, 0);
 	else if (id == 2 && money >= MissileTurret::Price)
 		preview = new MissileTurret(0, 0);*/
-	if (id == 3 && money >= TowerBase::Price)
+	else if (id == 3 && money >= TowerBase::Price){
 		preview = new TowerBase(0, 0);
+	}
 	if (!preview)
 		return;
 	preview->Position = Engine::GameEngine::GetInstance().GetMousePosition();

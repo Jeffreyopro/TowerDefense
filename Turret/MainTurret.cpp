@@ -10,6 +10,8 @@
 #include "Engine/Group.hpp"
 #include "Bullet/FireBullet.hpp"
 #include "Bullet/LaserBullet.hpp"
+#include "Bullet/Bullet5.hpp"
+#include "Bullet/Bullet6.hpp"
 #include "Bullet/MissileBullet.hpp"
 #include "Bullet/NewBullet.hpp"
 #include "MainTurret.hpp"
@@ -47,10 +49,22 @@ void MainTurret::CreateBullet() {
 			AudioHelper::PlayAudio("laser.wav");
 			break;
 		case 3:
+			getPlayScene()->BulletGroup->AddNewObject(new Bullet5(Position + normalized * 10 - normal * 6, diff, rotation));
+			AudioHelper::PlayAudio("laser.wav");
+			break;
+		case 4:
+			getPlayScene()->BulletGroup->AddNewObject(new Bullet6(Position + normalized * 10 - normal * 6, diff, rotation));
+			AudioHelper::PlayAudio("laser.wav");
+			break;
+		case 5:
 			getPlayScene()->BulletGroup->AddNewObject(new MissileBullet(Position + normalized * 10 - normal * 6, diff, rotation));
 			AudioHelper::PlayAudio("missile.wav");
 			break;
-		case 4:
+		case 6:
+			getPlayScene()->BulletGroup->AddNewObject(new NewBullet(Position + normalized * 10 - normal * 6, diff, rotation));
+			AudioHelper::PlayAudio("missile.wav");
+			break;
+		default:
 			getPlayScene()->BulletGroup->AddNewObject(new NewBullet(Position + normalized * 10 - normal * 6, diff, rotation));
 			AudioHelper::PlayAudio("missile.wav");
 			break;
@@ -88,9 +102,10 @@ void MainTurret::Update(float deltaTime) {
 	Rotation = atan2(rotation.y, rotation.x) + ALLEGRO_PI / 2;
 	// Shoot reload.
 	reload -= deltaTime;
-	if (reload <= 0) {
+	if (reload <= 0 && clicked) {
 		// shoot.
 		reload = coolDown;
 		CreateBullet();
 	}
+	clicked = 0;
 }

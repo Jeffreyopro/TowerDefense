@@ -54,8 +54,8 @@ add_executable(2024_I2P2_TowerDefense_with_answer
         Engine/LOG.hpp
         Scene/LoseScene.cpp
         Scene/LoseScene.hpp
-        Turret/MachineGunTurret.cpp
-        Turret/MachineGunTurret.hpp
+        Turret/LevelUp.cpp
+        Turret/LevelUp.hpp
         main.cpp
         Bullet/MissileBullet.cpp
         Bullet/MissileBullet.hpp
@@ -91,10 +91,16 @@ add_executable(2024_I2P2_TowerDefense_with_answer
         Enemy/NewEnemy.hpp
         Bullet/NewBullet.cpp
         Bullet/NewBullet.hpp
+        Bullet/Bullet5.cpp
+        Bullet/Bullet5.hpp
+        Bullet/Bullet6.cpp
+        Bullet/Bullet6.hpp
         Turret/MainTurret.cpp
         Turret/MainTurret.hpp
         Turret/TowerBase.cpp
         Turret/TowerBase.hpp
+        Turret/SpeedUp.cpp
+        Turret/SpeedUp.hpp
 
         # TODO: [HACKATHON-1-SCENE] (2/4) Add the new scene source files here
         Scene/StartScene.cpp

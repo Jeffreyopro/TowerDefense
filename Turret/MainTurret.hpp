@@ -9,9 +9,10 @@ class PlayScene;
 
 class MainTurret : public Engine::Sprite{
 public:
-	float speed = 100;
+    int clicked = 0;
+	float speed = 20;
     int level = 1;
-    float coolDown = 0.3;
+    float coolDown = 0.1;
     float reload = 0;
     float rotateRadian = 2 * ALLEGRO_PI;
     MainTurret(float x, float y);

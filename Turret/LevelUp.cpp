@@ -5,18 +5,18 @@
 #include "Engine/AudioHelper.hpp"
 #include "Bullet/FireBullet.hpp"
 #include "Engine/Group.hpp"
-#include "MachineGunTurret.hpp"
+#include "LevelUp.hpp"
 #include "Scene/PlayScene.hpp"
 #include "Engine/Point.hpp"
 
-const int MachineGunTurret::Price = 50;
-MachineGunTurret::MachineGunTurret(float x, float y) :
-	// TODO: [CUSTOM-TOOL] You can imitate the 2 files: 'MachineGunTurret.hpp', 'MachineGunTurret.cpp' to create a new turret.
-	Turret("play/tower-base.png", "play/turret-1.png", x, y, 200, Price, 0.5) {
+int LevelUpPrice = 100;
+LevelUp::LevelUp(float x, float y) :
+	// TODO: [CUSTOM-TOOL] You can imitate the 2 files: 'LevelUp.hpp', 'LevelUp.cpp' to create a new turret.
+	Turret("win/dirt.png", "play/LevelUp.png", x, y, 200, LevelUpPrice, 0.5) {
 	// Move center downward, since we the turret head is slightly biased upward.
 	Anchor.y += 8.0f / GetBitmapHeight();
 }
-void MachineGunTurret::CreateBullet() {
+void LevelUp::CreateBullet() {
 	Engine::Point diff = Engine::Point(cos(Rotation - ALLEGRO_PI / 2), sin(Rotation - ALLEGRO_PI / 2));
 	float rotation = atan2(diff.y, diff.x);
 	Engine::Point normalized = diff.Normalize();
