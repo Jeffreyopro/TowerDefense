@@ -8,6 +8,7 @@
 #include <string>
 #include <memory>
 #include <iostream>
+#include <random>
 
 #include "Engine/AudioHelper.hpp"
 #include "UI/Animation/DirtyEffect.hpp"
@@ -17,6 +18,7 @@
 #include "UI/Component/Label.hpp"
 #include "Turret/LaserTurret.hpp"
 #include "Turret/LevelUp.hpp"
+#include "Turret/Medic.hpp"
 #include "Turret/SpeedUp.hpp"
 #include "Turret/MissileTurret.hpp"
 #include "Turret/TowerBase.hpp"
@@ -30,7 +32,9 @@
 #include "Enemy/NewEnemy.hpp"
 #include "Turret/TurretButton.hpp"
 #include "Engine/Collider.hpp"
+int generateRandomNumber();
 int Score;
+int random_spawn = 0;
 int KeyCodeDetect[4]; // wsad
 TurretButton* storage[3]; // store btn pointer
 bool PlayScene::DebugMode = false;
@@ -38,7 +42,7 @@ const std::vector<Engine::Point> PlayScene::directions = { Engine::Point(-1, 0),
 const int PlayScene::MapWidth = 20, PlayScene::MapHeight = 13;
 const int PlayScene::BlockSize = 64;
 const float PlayScene::DangerTime = 7.61;
-const Engine::Point PlayScene::SpawnGridPoint = Engine::Point(-1, 0);
+Engine::Point SpawnGridPoint = Engine::Point(-1, 0);
 const Engine::Point PlayScene::EndGridPoint = Engine::Point(MapWidth, MapHeight - 1);
 const std::vector<int> PlayScene::code = { ALLEGRO_KEY_UP, ALLEGRO_KEY_UP, ALLEGRO_KEY_DOWN, ALLEGRO_KEY_DOWN,
 									ALLEGRO_KEY_LEFT, ALLEGRO_KEY_LEFT, ALLEGRO_KEY_RIGHT, ALLEGRO_KEY_RIGHT,
@@ -88,6 +92,7 @@ void PlayScene::Initialize() {
 	bgmId = AudioHelper::PlayBGM("play.ogg");
 }
 void PlayScene::Terminate() {
+	memset(KeyCodeDetect, 0, sizeof(KeyCodeDetect));
 	AudioHelper::StopBGM(bgmId);
 	AudioHelper::StopSample(deathBGMInstance);
 	deathBGMInstance = std::shared_ptr<ALLEGRO_SAMPLE_INSTANCE>();
@@ -176,7 +181,22 @@ void PlayScene::Update(float deltaTime) {
 			continue;
 		ticks -= current.second;
 		enemyWaveData.pop_front();
-		const Engine::Point SpawnCoordinate = Engine::Point(SpawnGridPoint.x * BlockSize + BlockSize / 2, SpawnGridPoint.y * BlockSize + BlockSize / 2);
+		random_spawn = generateRandomNumber();
+		switch(random_spawn){
+			case 0:
+				PlayScene::SpawnGridPoint = Engine::Point(-1, 0);
+				break;
+			case 1:
+				PlayScene::SpawnGridPoint = Engine::Point(-1, MapHeight);
+				break;
+			case 2:
+				PlayScene::SpawnGridPoint = Engine::Point(MapWidth, 0);
+				break;
+			case 3:
+				PlayScene::SpawnGridPoint = Engine::Point(MapWidth, MapHeight);
+				break;
+		}
+		Engine::Point SpawnCoordinate = Engine::Point(SpawnGridPoint.x * BlockSize + BlockSize / 2, SpawnGridPoint.y * BlockSize + BlockSize / 2);
 		Enemy* enemy;
 		switch (current.first) {
 		case 1:
@@ -319,7 +339,7 @@ void PlayScene::OnKeyDown(int keyCode) {
 		UIBtnClicked(1);
 	}
 	else if (keyCode == ALLEGRO_KEY_V) {
-		// Hotkey for MissileTurret.
+		// Hotkey for Medic.
 		UIBtnClicked(2);
 	}
 	else if (keyCode == ALLEGRO_KEY_E) {
@@ -467,14 +487,13 @@ void PlayScene::ConstructUI() {
 	UIGroup->AddNewControlObject(btn);
 	storage[1] = btn;
 	// Button 3
-	/*
 	btn = new TurretButton("play/floor.png", "play/dirt.png",
-		Engine::Sprite("play/tower-base.png", 1446, 136, 0, 0, 0, 0),
-		Engine::Sprite("play/turret-3.png", 1446, 136, 0, 0, 0, 0)
-		, 1446, 136, MissileTurret::Price);
+		Engine::Sprite("play/dirt.png", 1446, 136, 0, 0, 0, 0),
+		Engine::Sprite("play/Medic.png", 1446, 136, 0, 0, 0, 0)
+		, 1446, 136, MedicPrice);
 	btn->SetOnClickCallback(std::bind(&PlayScene::UIBtnClicked, this, 2));
 	UIGroup->AddNewControlObject(btn); 
-	*/
+	
 	// TODO: [CUSTOM-TURRET]: Create a button to support constructing the turret.
 	btn = new TurretButton("play/floor.png", "play/dirt.png",
 	Engine::Sprite("play/sand.png", 1522, 136, 0, 0, 0, 0),
@@ -515,16 +534,19 @@ void PlayScene::UIBtnClicked(int id) {
 		*/
 		//std::cout << "level" << main_turret->level << std::endl;
 	}
-	else if (id == 1 && money >= LaserTurret::Price) {
+	else if (id == 1 && money >= SpeedUpPrice) {
 		main_turret->speed *= 1.3;
 		EarnMoney(-SpeedUpPrice);
 		if(main_turret->speed<=100) SpeedUpPrice *= 1.5;
 		else SpeedUpPrice = 10000000;
 		storage[1]->money = SpeedUpPrice;
 	}
-	/*
-	else if (id == 2 && money >= MissileTurret::Price)
-		preview = new MissileTurret(0, 0);*/
+	
+	else if (id == 2 && money >= MedicPrice) {
+		lives++;
+		UILives->Text = std::string("Life ") + std::to_string(lives);
+		EarnMoney(-MedicPrice);
+	}
 	else if (id == 3 && money >= TowerBase::Price){
 		preview = new TowerBase(0, 0);
 	}
@@ -598,4 +620,11 @@ std::vector<std::vector<int>> PlayScene::CalculateBFSDistance() {
 		//               mapState[y][x] is TILE_DIRT if it is empty.
 	}
 	return map;
+}
+int generateRandomNumber() {
+    // Initialize random number generation
+    std::random_device rd;  // Will be used to obtain a seed for the random number engine
+    std::mt19937 gen(rd()); // Standard mersenne_twister_engine seeded with rd()
+    std::uniform_int_distribution<> distrib(0, 3); // Define the range [0, 3] inclusive
+    return distrib(gen); // Generate a random number within the defined range
 }
