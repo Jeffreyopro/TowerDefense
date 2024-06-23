@@ -17,27 +17,21 @@
 #include "PlayScene.hpp"
 #include "Engine/Point.hpp"
 #include "WinScene.hpp"
-struct Record {
-    std::string name;
-    int Rscore;
-    std::string date;
-    std::string time;
-};
 // Function to parse a line into a Record struct
-Record parseRecord(const std::string& line) {
+WinScene::Record WinScene::parseRecord(const std::string& line) {
     std::istringstream iss(line);
     Record record;
     iss >> record.name >> record.Rscore >> record.date >> record.time;
     return record;
 }
 // Function to convert a Record struct into a formatted string
-std::string recordToString(const Record& record) {
+std::string WinScene::recordToString(const Record& record) {
     std::ostringstream oss;
     oss << record.name << " " << record.Rscore << " " << record.date << " " << record.time;
     return oss.str();
 }
 // Function to compare Records based on score in descending order
-bool compareRecords(const Record& a, const Record& b) {
+bool WinScene::compareRecords(const Record& a, const Record& b) {
     return a.Rscore > b.Rscore;
 }
 
@@ -67,7 +61,8 @@ void WinScene::Terminate() {
     inFile.close();
     // Insert new data
     Record newRecord;
-    newRecord.name = name;
+	if(name.empty()) newRecord.name = "DEFAULT";
+    else newRecord.name = name;
     name = "";
     newRecord.Rscore = Score;
     // Get current date and time for new record

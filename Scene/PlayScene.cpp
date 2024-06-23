@@ -34,6 +34,7 @@
 #include "Engine/Collider.hpp"
 int generateRandomNumber();
 int Score;
+float speedup; float speedupbuff;
 int random_spawn = 0;
 int KeyCodeDetect[4]; // wsad
 TurretButton* storage[3]; // store btn pointer
@@ -61,7 +62,9 @@ void PlayScene::Initialize() {
 	ticks = 0;
 	deathCountDown = -1;
 	lives = 5;
-	money = 3000;
+	money = 1000;
+	speedup = 0; 
+	speedupbuff = 0;
 	Score = 0;
 	SpeedMult = 1;
 	LevelUpPrice = 100;
@@ -100,6 +103,8 @@ void PlayScene::Terminate() {
 	IScene::Terminate();
 }
 void PlayScene::Update(float deltaTime) {
+	if(speedupbuff>=2) speedupbuff = 0;
+	else speedupbuff += speedup;
 	// If we use deltaTime directly, then we might have Bullet-through-paper problem.
 	// Reference: Bullet-Through-Paper
 	main_turret->Update(deltaTime);
@@ -198,6 +203,7 @@ void PlayScene::Update(float deltaTime) {
 		}
 		Engine::Point SpawnCoordinate = Engine::Point(SpawnGridPoint.x * BlockSize + BlockSize / 2, SpawnGridPoint.y * BlockSize + BlockSize / 2);
 		Enemy* enemy;
+		for(int i=0 ;  i< 1+speedupbuff;i++){
 		switch (current.first) {
 		case 1:
 			EnemyGroup->AddNewObject(enemy = new SoldierEnemy(SpawnCoordinate.x, SpawnCoordinate.y));
@@ -219,7 +225,7 @@ void PlayScene::Update(float deltaTime) {
 		}
 		enemy->UpdatePath(mapDistance);
 		// Compensate the time lost.
-		enemy->Update(ticks);
+		enemy->Update(ticks);}
 	}
 	mapDistance = CalculateBFSDistance();
 	if (preview) {
@@ -227,7 +233,7 @@ void PlayScene::Update(float deltaTime) {
 		// To keep responding when paused.
 		preview->Update(deltaTime);
 	}
-}
+}	
 void PlayScene::Draw() const {
 	IScene::Draw();
 	main_turret->Draw();
@@ -397,7 +403,7 @@ int PlayScene::GetMoney() const {
 	return money;
 }
 void PlayScene::EarnMoney(int money) {
-	if(money>0) EarnScore(money/5);
+	if(money>0) EarnScore(money*3);
 	this->money += money;
 	UIMoney->Text = std::string("$") + std::to_string(this->money);
 }
@@ -516,6 +522,7 @@ void PlayScene::UIBtnClicked(int id) {
 	}
     // TODO: [CUSTOM-TURRET]: On callback, create the turret.
 	if (id == 0 && money >= LevelUpPrice) {
+		speedup += 0.01;
 		main_turret->level++;
 		EarnMoney(-LevelUpPrice);
 		if(main_turret->level!=6) LevelUpPrice *= 1.5;
@@ -535,6 +542,7 @@ void PlayScene::UIBtnClicked(int id) {
 		//std::cout << "level" << main_turret->level << std::endl;
 	}
 	else if (id == 1 && money >= SpeedUpPrice) {
+		speedup += 0.01;
 		main_turret->speed *= 1.3;
 		EarnMoney(-SpeedUpPrice);
 		if(main_turret->speed<=100) SpeedUpPrice *= 1.5;
@@ -567,7 +575,7 @@ bool PlayScene::CheckSpaceValid(int x, int y) {
 	mapState[y][x] = TILE_OCCUPIED;
 	std::vector<std::vector<int>> map = CalculateBFSDistance();
 	mapState[y][x] = map00;
-	if (map[0][0] == -1)
+	if (map[0][0] == -1 || map[MapHeight - 1][0] == -1 || map[0][MapWidth - 1] == -1 || map[MapHeight - 1][MapWidth - 1] == -1)
 		return false;
 	for (auto& it : EnemyGroup->GetObjects()) {
 		Engine::Point pnt;

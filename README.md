@@ -1,29 +1,14 @@
-# 2024 I2P Mini Project 2 - Tower Defense
+# 2024 I2P Mini Project 2 - Tower Attack
 
-## Grading
+How to play?
+You should control your character by pressing WSAD and shoot bullets by clicking your mouse, try to survive and gain sore as much as you can, buying some stuff also helps.
 
-| **Hackathon Tasks**              | **Score** | **Check** |
-| :------------------------------- | :-------: | :-------: |
-| Add `StartScene`                 |    5%     |     -     |
-| Add `StageSelectScene`           |    5%     |     -     |
-| Move Controls to `SettingsScene` |    5%     |     -     |
-| Fix Bugs in Scene                |    15%    |     -     |
+Added features:
+1. a main character that can move around and shoot.
+2. the enemy will come from 4 directions randomly.
+3. the enemy will target the player dynamically instead of reaching to the specific location.
+4. there are 4 things you can purchase, 2 of their price will increase if you buy more, the other is constant.
 
-| **Project Tasks**           | **Score** | **Check** |
-| :-------------------------- | :-------: | :-------: |
-| Add `ScoreboardScene`       |    40%    |     -     |
-| Enemy Pathfinding           |    10%    |     -     |
-| 2 New Turrets/Enemies/Tools |    20%    |     -     |
-
-<!-- Please describe the new turret/enemy/tool you have implemented in the above table. -->
-
-| **Bonus Functions**   | **Score** | **Check** |
-| :-------------------- | :-------: | :-------: |
-| Scoreboard Date Time  |    3%     |     -     |
-| Record User Name      |    7%     |     -     |
-| Other Bonus Functions |   ≤10%    |     -     | (scoreboard 排序)
-
-<!-- Please describe the bonus optimizations or features you have implemented in the above table. -->
 
 ---
 
